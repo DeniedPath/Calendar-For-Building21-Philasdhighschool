@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Building 21 – Live 3-Month Calendar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <style>
+    :root{
+      --gap:4px;
+      --cell:8.2rem;
+      --today:#ffe066;
+      --arrow:#0057b8;
+    }
+    body{font-family:system-ui,sans-serif;margin:0;padding:1rem;background:#fafafa}
+    h1{margin:0 0 .5rem}
+    #nav{display:flex;gap:.5rem;align-items:center;margin-bottom:.75rem}
+    #nav button{font-size:1.8rem;padding:.2rem .7rem;cursor:pointer;background:var(--arrow);color:#fff;border:none;border-radius:4px}
+    #strip{overflow:hidden;width:100%}
+    #track{display:flex;transition:transform .35s ease}
+    .month{width:100%;flex:none;display:grid;grid-template-columns:repeat(7,1fr);gap:var(--gap)}
+    .dow{font-weight:600;text-align:center;padding:.3rem 0}
+    .day{min-height:var(--cell);border:1px solid #ddd;background:#fff;padding:.3rem;position:relative}
+    .day.other{background:#f5f5f5;color:#999}
+    .day.today{background:var(--today)}
+    .num{font-weight:600;margin-bottom:.2rem}
+    .evt{font-size:.7rem;padding:2px 4px;margin:2px 0;border-radius:3px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    #key{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1rem;font-size:.8rem}
+    .key-box{padding:3px 8px;border-radius:3px;color:#fff}
+  </style>
+</head>
+<body>
+  <h1 id="title">Building 21 – 2025-2026 Master Calendar</h1>
+
+  <div id="nav">
+    <button id="prev">‹</button>
+    <button id="todayBtn">Today</button>
+    <button id="next">›</button>
+  </div>
+
+  <!-- 3-month strip -->
+  <div id="strip">
+    <div id="track"></div>
+  </div>
+
+  <!-- colour key -->
+  <div id="key"></div>
+
+  <script>
+    /* ==============  CONFIG  ============== */
+    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRDuMfESzCEoBEag2PgdP-XsIrd7sa9lPs0nIUzuSmsrMZVIBZqxmKM5vRv0G0k2YRG2cBeMUM4xhwl/pub?output=csv'; // << CHANGE
+    /* ====================================== */
+
+    /* ---------- colour map from your PDF ---------- */
+    const COLOR_MAP = {
+      'school closure':'#d32f2f',
+      'sdp event/pd- no school for students':'#f57c00',
+      'school event':'#388e3c',
+      'star testing':'#7b1fa2',
+      'professional development- 3 hour early dismissal for students':'#0288d1',
+      'standardized testing':'#5d4037',
+      'report card conferences-3 hour early dismissal for students':'#c2185b'
+    };
+    const KEYS = Object.entries(COLOR_MAP).map(([k,v])=>`<span class=key-box style=background:${v}>${k}</span>`).join('');
+    document.getElementById('key').innerHTML = KEYS;
+
+    let current = new Date();          // centre month
+    let events = [];
+
+    /* ---------- fetch ---------- */
+    async function load(){ 
+      const res = await fetch(SHEET_CSV_URL);
+      const txt = await res.text();
+      events = csvToObj(txt);
+      render();
+    }
+    function csvToObj(str){
+      const [head,...rows] = str.split(/\r?\n/).filter(Boolean);
+      const k = head.split(',').map(s=>s.trim().toLowerCase());
+      return rows.map(r=>{
+        const o = {};
+        r.split(',').map((v,i)=>o[k[i]] = v.trim());
+        o.date = new Date(o.date);
+        return o;
+      }).filter(e=>!isNaN(e.date));
+    }
+
+    /* ---------- render 3 months ---------- */
+    function render(){
+      const m = current.getMonth();
+      const y = current.getFullYear();
+      const months = [
+        new Date(y, m-1, 1),
+        new Date(y, m  , 1),
+        new Date(y, m+1, 1)
+      ];
+      document.getElementById('track').innerHTML = months.map(mon=>buildMonth(mon)).join('');
+    }
+    function buildMonth(mon){
+      const y = mon.getFullYear(), m = mon.getMonth();
+      const start = new Date(y, m, 1);
+      const end = new Date(y, m+1, 0);
+      const first = new Date(start); first.setDate(first.getDate() - start.getDay());
+
+      const html = ['<div class=month>'];
+      ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d=>html.push(`<div class=dow>${d}</div>`));
+      const today = new Date();
+      for(let i=0;i<42;i++){
+        const d = new Date(first); d.setDate(first.getDate()+i);
+        const cl = ['day'];
+        if(d.getMonth()!==m) cl.push('other');
+        if(isToday(d)) cl.push('today');
+        html.push(`<div class="${cl.join(' ')}"><div class=num>${d.getDate()}</div>`);
+        events.filter(e=>sameDay(e.date,d))
+              .forEach(e=>{
+                const col = pickColor(e);
+                html.push(`<div class=evt style="background:${col};color:#fff" title="${e.title} • ${e.time||''} ${e.location||''}">${e.title}</div>`);
+              });
+        html.push('</div>');
+      }
+      html.push('</div>');
+      return html.join('');
+    }
+    function isToday(d){
+      const t = new Date();
+      return d.getDate()===t.getDate() && d.getMonth()===t.getMonth() && d.getFullYear()===t.getFullYear();
+    }
+    function sameDay(a,b){
+      return a.getDate()===b.getDate() && a.getMonth()===b.getMonth() && a.getFullYear()===b.getFullYear();
+    }
+    function pickColor(e){
+      const t = (e.description||'').toLowerCase();
+      for(const [key,col] of Object.entries(COLOR_MAP)) if(t.includes(key)) return col;
+      return '#616161'; // fallback
+    }
+
+    /* ---------- nav ---------- */
+    document.getElementById('prev').onclick = ()=>{ current.setMonth(current.getMonth()-1); render(); };
+    document.getElementById('next').onclick = ()=>{ current.setMonth(current.getMonth()+1); render(); };
+    document.getElementById('todayBtn').onclick = ()=>{ current = new Date(); render(); };
+
+    /* ---------- kick-off + poll ---------- */
+    load();
+    setInterval(load, 5*60*1000); // refresh every 5 min
+  </script>
+</body>
+</html>
