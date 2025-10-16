@@ -1,146 +1,583 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <title>Building 21 – Live 3-Month Calendar</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Building 21 - Three Month Calendar</title>
   <style>
-    :root{
-      --gap:4px;
-      --cell:8.2rem;
-      --today:#ffe066;
-      --arrow:#0057b8;
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
-    body{font-family:system-ui,sans-serif;margin:0;padding:1rem;background:#fafafa}
-    h1{margin:0 0 .5rem}
-    #nav{display:flex;gap:.5rem;align-items:center;margin-bottom:.75rem}
-    #nav button{font-size:1.8rem;padding:.2rem .7rem;cursor:pointer;background:var(--arrow);color:#fff;border:none;border-radius:4px}
-    #strip{overflow:hidden;width:100%}
-    #track{display:flex;transition:transform .35s ease}
-    .month{width:100%;flex:none;display:grid;grid-template-columns:repeat(7,1fr);gap:var(--gap)}
-    .dow{font-weight:600;text-align:center;padding:.3rem 0}
-    .day{min-height:var(--cell);border:1px solid #ddd;background:#fff;padding:.3rem;position:relative}
-    .day.other{background:#f5f5f5;color:#999}
-    .day.today{background:var(--today)}
-    .num{font-weight:600;margin-bottom:.2rem}
-    .evt{font-size:.7rem;padding:2px 4px;margin:2px 0;border-radius:3px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    #key{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1rem;font-size:.8rem}
-    .key-box{padding:3px 8px;border-radius:3px;color:#fff}
+    
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f5f5f5;
+      padding: 1rem;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    
+    h1 {
+      font-size: 1.5rem;
+      color: #333;
+      margin-bottom: 0.5rem;
+    }
+    
+    .subtitle {
+      color: #666;
+      font-size: 0.9rem;
+    }
+    
+    .nav-controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .nav-btn {
+      background: #0057b8;
+      color: white;
+      border: none;
+      font-size: 1.2rem;
+      width: 40px;
+      height: 40px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+    
+    .nav-btn:hover:not(:disabled) {
+      background: #003d82;
+    }
+    
+    .nav-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    
+    .today-btn {
+      background: #388e3c;
+      padding: 0.5rem 1.5rem;
+      font-size: 0.95rem;
+      width: auto;
+      height: auto;
+    }
+    
+    .today-btn:hover {
+      background: #2e7d32;
+    }
+    
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+      padding: 0.75rem;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.75rem;
+    }
+    
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    
+    .calendar-wrapper {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      max-width: 1800px;
+      margin: 0 auto;
+    }
+    
+    .month-container {
+      background: white;
+      border-radius: 8px;
+      padding: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .month-header {
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid #e0e0e0;
+    }
+    
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+    }
+    
+    .day-header {
+      text-align: center;
+      font-weight: 600;
+      padding: 0.4rem 0;
+      color: #666;
+      font-size: 0.75rem;
+      background: #f5f5f5;
+    }
+    
+    .day-cell {
+      min-height: 80px;
+      border: 1px solid #e0e0e0;
+      background: white;
+      padding: 0.3rem;
+      position: relative;
+    }
+    
+    .day-cell.other-month {
+      background: #fafafa;
+      color: #bbb;
+    }
+    
+    .day-cell.today {
+      background: #fff9c4;
+      border: 2px solid #fdd835;
+    }
+    
+    .day-number {
+      font-weight: 600;
+      font-size: 0.8rem;
+      margin-bottom: 0.2rem;
+    }
+    
+    .event {
+      font-size: 0.6rem;
+      padding: 1px 3px;
+      margin: 1px 0;
+      border-radius: 2px;
+      color: white;
+      cursor: pointer;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      line-height: 1.4;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      font-size: 1rem;
+      color: #666;
+      grid-column: 1 / -1;
+    }
+
+    .debug {
+      background: #fff;
+      padding: 1rem;
+      margin: 1rem auto;
+      max-width: 1800px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      font-size: 0.85rem;
+    }
+
+    .debug h3 {
+      margin-bottom: 0.5rem;
+    }
+
+    .debug pre {
+      background: #f5f5f5;
+      padding: 0.5rem;
+      overflow-x: auto;
+      border-radius: 4px;
+    }
+
+    @media (max-width: 1200px) {
+      .calendar-wrapper {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1 id="title">Building 21 – 2025-2026 Master Calendar</h1>
-
-  <div id="nav">
-    <button id="prev">‹</button>
-    <button id="todayBtn">Today</button>
-    <button id="next">›</button>
+  <div class="header">
+    <h1>Building 21 Philadelphia - Master Calendar 2025-2026</h1>
+    <div class="subtitle">View your upcoming events and important dates</div>
   </div>
 
-  <!-- 3-month strip -->
-  <div id="strip">
-    <div id="track"></div>
+  <div class="legend" id="legend"></div>
+
+  <div class="nav-controls">
+    <button class="nav-btn" id="prevBtn">‹</button>
+    <button class="nav-btn today-btn" id="todayBtn">Today</button>
+    <button class="nav-btn" id="nextBtn">›</button>
   </div>
 
-  <!-- colour key -->
-  <div id="key"></div>
+  <div class="calendar-wrapper" id="calendarWrapper">
+    <div class="loading">Loading calendar data...</div>
+  </div>
 
+  <!-- Debug info (remove this once it's working) -->
+  <div class="debug" id="debug">
+    <h3>Debug Info:</h3>
+    <div id="debugContent">Waiting for data...</div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
   <script>
-    /* ==============  CONFIG  ============== */
-    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRDuMfESzCEoBEag2PgdP-XsIrd7sa9lPs0nIUzuSmsrMZVIBZqxmKM5vRv0G0k2YRG2cBeMUM4xhwl/pub?output=csv'; // << CHANGE
-    /* ====================================== */
-
-    /* ---------- colour map from your PDF ---------- */
+    // CONFIGURATION - Update this URL to your Google Sheet CSV export
+    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRDuMfESzCEoBEag2PgdP-XsIrd7sa9lPs0nIUzuSmsrMZVIBZqxmKM5vRv0G0k2YRG2cBeMUM4xhwl/pub?output=csv';
+    
+    // Color mapping
     const COLOR_MAP = {
-      'school closure':'#d32f2f',
-      'sdp event/pd- no school for students':'#f57c00',
-      'school event':'#388e3c',
-      'star testing':'#7b1fa2',
-      'professional development- 3 hour early dismissal for students':'#0288d1',
-      'standardized testing':'#5d4037',
-      'report card conferences-3 hour early dismissal for students':'#c2185b'
+      'school closure': '#d32f2f',
+      'sdp event': '#f57c00',
+      'no school': '#f57c00',
+      'school event': '#388e3c',
+      'star testing': '#7b1fa2',
+      'professional development': '#0288d1',
+      'early dismissal': '#0288d1',
+      'pd': '#0288d1',
+      'standardized testing': '#5d4037',
+      'keystone': '#5d4037',
+      'psat': '#5d4037',
+      'report card': '#c2185b',
+      'conferences': '#c2185b'
     };
-    const KEYS = Object.entries(COLOR_MAP).map(([k,v])=>`<span class=key-box style=background:${v}>${k}</span>`).join('');
-    document.getElementById('key').innerHTML = KEYS;
 
-    let current = new Date();          // centre month
     let events = [];
+    let currentStartMonth = 0;
+    let allMonths = [];
 
-    /* ---------- fetch ---------- */
-    async function load(){ 
-      const res = await fetch(SHEET_CSV_URL);
-      const txt = await res.text();
-      events = csvToObj(txt);
-      render();
-    }
-    function csvToObj(str){
-      const [head,...rows] = str.split(/\r?\n/).filter(Boolean);
-      const k = head.split(',').map(s=>s.trim().toLowerCase());
-      return rows.map(r=>{
-        const o = {};
-        r.split(',').map((v,i)=>o[k[i]] = v.trim());
-        o.date = new Date(o.date);
-        return o;
-      }).filter(e=>!isNaN(e.date));
+    // Initialize
+    function init() {
+      generateLegend();
+      generateMonths();
+      loadEvents();
+      setupNavigation();
     }
 
-    /* ---------- render 3 months ---------- */
-    function render(){
-      const m = current.getMonth();
-      const y = current.getFullYear();
-      const months = [
-        new Date(y, m-1, 1),
-        new Date(y, m  , 1),
-        new Date(y, m+1, 1)
+    // Generate legend
+    function generateLegend() {
+      const legend = document.getElementById('legend');
+      const categories = [
+        ['School Closure', '#d32f2f'],
+        ['SDP Event/PD', '#f57c00'],
+        ['School Event', '#388e3c'],
+        ['STAR Testing', '#7b1fa2'],
+        ['Professional Development', '#0288d1'],
+        ['Standardized Testing', '#5d4037'],
+        ['Report Card Conferences', '#c2185b']
       ];
-      document.getElementById('track').innerHTML = months.map(mon=>buildMonth(mon)).join('');
+      
+      legend.innerHTML = categories.map(([label, color]) => `
+        <div class="legend-item">
+          <div class="legend-color" style="background: ${color}"></div>
+          <span>${label}</span>
+        </div>
+      `).join('') + '<div class="legend-item"><div class="legend-color" style="background: #fff9c4; border: 1px solid #fdd835;"></div><span>Today</span></div>';
     }
-    function buildMonth(mon){
-      const y = mon.getFullYear(), m = mon.getMonth();
-      const start = new Date(y, m, 1);
-      const end = new Date(y, m+1, 0);
-      const first = new Date(start); first.setDate(first.getDate() - start.getDay());
 
-      const html = ['<div class=month>'];
-      ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d=>html.push(`<div class=dow>${d}</div>`));
-      const today = new Date();
-      for(let i=0;i<42;i++){
-        const d = new Date(first); d.setDate(first.getDate()+i);
-        const cl = ['day'];
-        if(d.getMonth()!==m) cl.push('other');
-        if(isToday(d)) cl.push('today');
-        html.push(`<div class="${cl.join(' ')}"><div class=num>${d.getDate()}</div>`);
-        events.filter(e=>sameDay(e.date,d))
-              .forEach(e=>{
-                const col = pickColor(e);
-                html.push(`<div class=evt style="background:${col};color:#fff" title="${e.title} • ${e.time||''} ${e.location||''}">${e.title}</div>`);
-              });
-        html.push('</div>');
+    // Generate all months for the school year
+    function generateMonths() {
+      allMonths = [];
+      for (let year = 2025; year <= 2026; year++) {
+        const startMonth = year === 2025 ? 7 : 0;
+        const endMonth = year === 2025 ? 11 : 5;
+        
+        for (let month = startMonth; month <= endMonth; month++) {
+          allMonths.push(new Date(year, month, 1));
+        }
       }
-      html.push('</div>');
-      return html.join('');
-    }
-    function isToday(d){
-      const t = new Date();
-      return d.getDate()===t.getDate() && d.getMonth()===t.getMonth() && d.getFullYear()===t.getFullYear();
-    }
-    function sameDay(a,b){
-      return a.getDate()===b.getDate() && a.getMonth()===b.getMonth() && a.getFullYear()===b.getFullYear();
-    }
-    function pickColor(e){
-      const t = (e.description||'').toLowerCase();
-      for(const [key,col] of Object.entries(COLOR_MAP)) if(t.includes(key)) return col;
-      return '#616161'; // fallback
+      
+      const today = new Date();
+      currentStartMonth = allMonths.findIndex(m => 
+        m.getMonth() === today.getMonth() && 
+        m.getFullYear() === today.getFullYear()
+      );
+      if (currentStartMonth === -1) currentStartMonth = 0;
     }
 
-    /* ---------- nav ---------- */
-    document.getElementById('prev').onclick = ()=>{ current.setMonth(current.getMonth()-1); render(); };
-    document.getElementById('next').onclick = ()=>{ current.setMonth(current.getMonth()+1); render(); };
-    document.getElementById('todayBtn').onclick = ()=>{ current = new Date(); render(); };
+    // Load events from Google Sheets
+    function loadEvents() {
+      console.log('Fetching from:', SHEET_CSV_URL);
+      
+      Papa.parse(SHEET_CSV_URL, {
+        download: true,
+        complete: function(results) {
+          console.log('Raw CSV data:', results);
+          
+          // Display debug info
+          const debugDiv = document.getElementById('debugContent');
+          debugDiv.innerHTML = `
+            <p><strong>Rows received:</strong> ${results.data.length}</p>
+            <p><strong>First 3 rows:</strong></p>
+            <pre>${JSON.stringify(results.data.slice(0, 3), null, 2)}</pre>
+          `;
+          
+          // Process the data
+          // Try different parsing strategies
+          processCSVData(results.data);
+          renderCalendars();
+        },
+        error: function(error) {
+          console.error('Error loading:', error);
+          document.getElementById('calendarWrapper').innerHTML = 
+            '<div class="loading">Error loading calendar. Check console for details.</div>';
+          document.getElementById('debugContent').innerHTML = 
+            `<p style="color: red;">Error: ${error.message}</p>`;
+        }
+      });
+    }
 
-    /* ---------- kick-off + poll ---------- */
-    load();
-    setInterval(load, 5*60*1000); // refresh every 5 min
+    // Process CSV data - tries to intelligently parse different formats
+    function processCSVData(rows) {
+      events = [];
+      
+      // Skip empty rows
+      rows = rows.filter(row => row && row.length > 0 && row.some(cell => cell && cell.trim()));
+      
+      if (rows.length === 0) {
+        console.log('No data found');
+        return;
+      }
+      
+      console.log('Processing rows:', rows.length);
+      
+      // Check if first row looks like headers
+      const firstRow = rows[0];
+      const hasHeaders = firstRow.some(cell => 
+        typeof cell === 'string' && 
+        (cell.toLowerCase().includes('date') || 
+         cell.toLowerCase().includes('event') || 
+         cell.toLowerCase().includes('title'))
+      );
+      
+      const dataRows = hasHeaders ? rows.slice(1) : rows;
+      console.log('Has headers:', hasHeaders);
+      console.log('Data rows:', dataRows.length);
+      
+      // Process each row
+      dataRows.forEach((row, idx) => {
+        if (!row || row.length < 2) return;
+        
+        // Assume: Column 0 = Date, Column 1 = Title, Column 2+ = Description/Type
+        const dateStr = row[0] ? row[0].trim() : '';
+        const title = row[1] ? row[1].trim() : '';
+        const description = row.slice(2).join(' ').toLowerCase().trim();
+        
+        if (!dateStr || !title) return;
+        
+        const date = parseDate(dateStr);
+        if (date && !isNaN(date.getTime())) {
+          events.push({
+            date: date,
+            title: title,
+            description: description
+          });
+        } else {
+          console.log('Failed to parse date:', dateStr, 'on row', idx);
+        }
+      });
+      
+      console.log('Parsed events:', events.length);
+      console.log('Sample events:', events.slice(0, 5));
+      
+      // Update debug display
+      const debugDiv = document.getElementById('debugContent');
+      debugDiv.innerHTML += `
+        <p><strong>Events parsed:</strong> ${events.length}</p>
+        <p><strong>Sample events:</strong></p>
+        <pre>${JSON.stringify(events.slice(0, 3).map(e => ({
+          date: e.date.toLocaleDateString(),
+          title: e.title,
+          desc: e.description
+        })), null, 2)}</pre>
+      `;
+    }
+
+    // Parse date from various formats
+    function parseDate(dateStr) {
+      if (!dateStr) return null;
+      
+      dateStr = dateStr.trim();
+      
+      // Try MM/DD/YYYY or M/D/YYYY
+      let parts = dateStr.split('/');
+      if (parts.length === 3) {
+        const month = parseInt(parts[0]) - 1;
+        const day = parseInt(parts[1]);
+        const year = parseInt(parts[2]);
+        if (!isNaN(month) && !isNaN(day) && !isNaN(year)) {
+          return new Date(year, month, day);
+        }
+      }
+      
+      // Try YYYY-MM-DD
+      parts = dateStr.split('-');
+      if (parts.length === 3) {
+        const year = parseInt(parts[0]);
+        const month = parseInt(parts[1]) - 1;
+        const day = parseInt(parts[2]);
+        if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+          return new Date(year, month, day);
+        }
+      }
+      
+      // Try standard Date parsing
+      const parsed = new Date(dateStr);
+      if (!isNaN(parsed.getTime())) {
+        return parsed;
+      }
+      
+      return null;
+    }
+
+    // Render three consecutive months
+    function renderCalendars() {
+      const wrapper = document.getElementById('calendarWrapper');
+      const months = getThreeMonths();
+      
+      wrapper.innerHTML = months.map(month => buildMonth(month)).join('');
+      updateNavButtons();
+    }
+
+    // Get three consecutive months
+    function getThreeMonths() {
+      const months = [];
+      for (let i = 0; i < 3; i++) {
+        const idx = currentStartMonth + i;
+        if (idx >= 0 && idx < allMonths.length) {
+          months.push(allMonths[idx]);
+        }
+      }
+      return months;
+    }
+
+    // Build a single month calendar
+    function buildMonth(monthDate) {
+      const year = monthDate.getFullYear();
+      const month = monthDate.getMonth();
+      const monthName = monthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      
+      const firstDay = new Date(year, month, 1);
+      const startDate = new Date(firstDay);
+      startDate.setDate(startDate.getDate() - firstDay.getDay());
+      
+      let html = `
+        <div class="month-container">
+          <div class="month-header">${monthName}</div>
+          <div class="calendar-grid">
+            ${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+              .map(day => `<div class="day-header">${day}</div>`)
+              .join('')}
+      `;
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      for (let i = 0; i < 42; i++) {
+        const currentDate = new Date(startDate);
+        currentDate.setDate(startDate.getDate() + i);
+        
+        const isOtherMonth = currentDate.getMonth() !== month;
+        const isToday = isSameDay(currentDate, today);
+        
+        const dayEvents = events.filter(e => isSameDay(e.date, currentDate));
+        
+        html += `
+          <div class="day-cell ${isOtherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''}">
+            <div class="day-number">${currentDate.getDate()}</div>
+            ${dayEvents.map(e => {
+              const color = getEventColor(e);
+              return `<div class="event" style="background: ${color}" title="${e.title}">${e.title}</div>`;
+            }).join('')}
+          </div>
+        `;
+      }
+      
+      html += '</div></div>';
+      return html;
+    }
+
+    // Check if two dates are the same day
+    function isSameDay(date1, date2) {
+      if (!date1 || !date2) return false;
+      return date1.getDate() === date2.getDate() &&
+             date1.getMonth() === date2.getMonth() &&
+             date1.getFullYear() === date2.getFullYear();
+    }
+
+    // Get event color based on description keywords
+    function getEventColor(event) {
+      const desc = event.description.toLowerCase();
+      
+      for (const [key, color] of Object.entries(COLOR_MAP)) {
+        if (desc.includes(key)) {
+          return color;
+        }
+      }
+      
+      return '#757575';
+    }
+
+    // Update navigation button states
+    function updateNavButtons() {
+      document.getElementById('prevBtn').disabled = currentStartMonth === 0;
+      document.getElementById('nextBtn').disabled = currentStartMonth >= allMonths.length - 3;
+    }
+
+    // Setup navigation
+    function setupNavigation() {
+      document.getElementById('prevBtn').addEventListener('click', () => {
+        if (currentStartMonth > 0) {
+          currentStartMonth--;
+          renderCalendars();
+        }
+      });
+      
+      document.getElementById('nextBtn').addEventListener('click', () => {
+        if (currentStartMonth < allMonths.length - 3) {
+          currentStartMonth++;
+          renderCalendars();
+        }
+      });
+      
+      document.getElementById('todayBtn').addEventListener('click', () => {
+        const today = new Date();
+        const idx = allMonths.findIndex(m => 
+          m.getMonth() === today.getMonth() && 
+          m.getFullYear() === today.getFullYear()
+        );
+        if (idx !== -1) {
+          currentStartMonth = Math.max(0, Math.min(idx, allMonths.length - 3));
+          renderCalendars();
+        }
+      });
+    }
+
+    // Auto-refresh every 5 minutes
+    setInterval(loadEvents, 5 * 60 * 1000);
+
+    // Start the app
+    init();
   </script>
 </body>
 </html>
